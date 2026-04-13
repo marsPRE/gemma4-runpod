@@ -82,8 +82,11 @@ def start_llama_server() -> None:
     """Launch llama-server subprocess and wait until it is healthy."""
     global _llama_proc
 
+    # In ghcr.io/ggml-org/llama.cpp:server-cuda the binary is at /llama-server
+    binary = "/llama-server"
+
     cmd = [
-        "llama-server",
+        binary,
         "--model",       str(MODEL_PATH),
         "--host",        "127.0.0.1",
         "--port",        str(LLAMA_PORT),
