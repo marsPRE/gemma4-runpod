@@ -178,8 +178,21 @@ def _build_messages(job_input: dict) -> list[dict]:
 def handler(job: dict) -> dict | Generator:
     """RunPod job handler – sync and streaming."""
     job_input = job.get("input", {})
-    stream    = job_input.get("stream", False)
 
+    # RunPod OpenAI-proxy mode: requests via /openai/v1/... are forwarded here
+    # with openai_route + openai_input set by the RunPod gateway.
+    if "openai_route" in job_input:
+        route  = job_input["openai_route"].lstrip("/")   # e.g. "v1/chat/completions"
+        body   = job_input.get("openai_input", {})
+        stream = body.get("stream", False)
+        url    = f"{LLAMA_BASE_URL}/{route}"
+        if stream:
+            return _stream_openai(url, body)
+        resp = requests.post(url, json=body, timeout=300)
+        resp.raise_for_status()
+        return resp.json()
+
+    stream  = job_input.get("stream", False)
     payload = {
         "model":       MODEL_FILE,
         "messages":    _build_messages(job_input),
@@ -212,6 +225,16 @@ def _sync_response(payload: dict) -> dict:
         "model":       data.get("model", MODEL_FILE),
         "finish_reason": choices[0].get("finish_reason", "") if choices else "",
     }
+
+
+def _stream_openai(url: str, body: dict) -> Generator:
+    """Pass SSE lines from llama-server straight through to the RunPod gateway."""
+    with requests.post(url, json=body, stream=True, timeout=300) as resp:
+        resp.raise_for_status()
+        for raw_line in resp.iter_lines():
+            if raw_line:
+                line = raw_line.decode("utf-8") if isinstance(raw_line, bytes) else raw_line
+                yield line + "\n"
 
 
 def _stream_response(payload: dict) -> Generator:
