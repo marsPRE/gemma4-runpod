@@ -177,9 +177,7 @@ def _build_messages(job_input: dict) -> list[dict]:
 
 def handler(job: dict) -> dict | Generator:
     """RunPod job handler – sync and streaming."""
-    log.info("DEBUG job keys: %s", list(job.keys()))
     job_input = job.get("input", {})
-    log.info("DEBUG job_input keys: %s", list(job_input.keys()) if isinstance(job_input, dict) else type(job_input))
 
     # RunPod OpenAI-proxy mode: requests via /openai/v1/... are forwarded here
     # with openai_route + openai_input set by the RunPod gateway.
@@ -191,11 +189,10 @@ def handler(job: dict) -> dict | Generator:
         if stream:
             return _stream_openai(url, body)
         resp = requests.post(url, json=body, timeout=300)
-        log.info("DEBUG llama status: %s", resp.status_code)
-        log.info("DEBUG llama response: %s", resp.text[:500])
         resp.raise_for_status()
         result = resp.json()
-        log.info("DEBUG returning keys: %s", list(result.keys()) if isinstance(result, dict) else type(result))
+        # Strip non-standard llama.cpp fields that may confuse RunPod's proxy
+        result.pop("timings", None)
         return result
 
     stream  = job_input.get("stream", False)
