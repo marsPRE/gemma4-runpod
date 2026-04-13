@@ -191,8 +191,12 @@ def handler(job: dict) -> dict | Generator:
         if stream:
             return _stream_openai(url, body)
         resp = requests.post(url, json=body, timeout=300)
+        log.info("DEBUG llama status: %s", resp.status_code)
+        log.info("DEBUG llama response: %s", resp.text[:500])
         resp.raise_for_status()
-        return resp.json()
+        result = resp.json()
+        log.info("DEBUG returning keys: %s", list(result.keys()) if isinstance(result, dict) else type(result))
+        return result
 
     stream  = job_input.get("stream", False)
     payload = {
