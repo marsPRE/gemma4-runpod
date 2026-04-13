@@ -1,52 +1,25 @@
 # ============================================================
-# Stage 1: Build llama.cpp with CUDA support
+# Base: pre-built llama.cpp server with CUDA (maintained by ggml-org)
+# Avoids compiling CUDA on CI runners that have no GPU driver.
 # ============================================================
-FROM nvidia/cuda:12.4.1-devel-ubuntu22.04 AS builder
+FROM ghcr.io/ggml-org/llama.cpp:server-cuda
 
-ARG DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        cmake \
-        git \
-        curl \
-        libcurl4-openssl-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /build
-
-RUN git clone --depth 1 https://github.com/ggml-org/llama.cpp .
-
-RUN cmake -B build \
-        -DGGML_CUDA=ON \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DLLAMA_CURL=ON \
-    && cmake --build build --config Release -j"$(nproc)" --target llama-server
-
-# ============================================================
-# Stage 2: Runtime image
-# ============================================================
-FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
+ENTRYPOINT []
 
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3 \
         python3-pip \
-        libcurl4 \
-        libgomp1 \
-        ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy compiled binary from builder
-COPY --from=builder /build/build/bin/llama-server /usr/local/bin/llama-server
-RUN chmod +x /usr/local/bin/llama-server
+ENV LD_LIBRARY_PATH="/app:${LD_LIBRARY_PATH:-}"
 
 # Install Python dependencies
 COPY requirements.txt /app/requirements.txt
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
 
 # Copy application files
 COPY handler.py  /app/handler.py
