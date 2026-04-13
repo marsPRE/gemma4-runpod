@@ -82,8 +82,23 @@ def start_llama_server() -> None:
     """Launch llama-server subprocess and wait until it is healthy."""
     global _llama_proc
 
-    # In ghcr.io/ggml-org/llama.cpp:server-cuda the binary is at /llama-server
-    binary = "/llama-server"
+    # Find llama-server binary — location varies by image version
+    import shutil
+    candidates = [
+        "/llama-server",
+        "/usr/local/bin/llama-server",
+        "/app/llama-server",
+        shutil.which("llama-server") or "",
+        shutil.which("server") or "",
+    ]
+    binary = next((p for p in candidates if p and Path(p).exists()), None)
+    if binary is None:
+        # Log all files to help debug
+        import glob
+        found = glob.glob("/*server*") + glob.glob("/usr/**/*server*", recursive=True)
+        log.error("llama-server not found! Located files: %s", found)
+        raise FileNotFoundError("llama-server binary not found. Searched: " + str(candidates))
+    log.info("Using llama-server binary: %s", binary)
 
     cmd = [
         binary,
