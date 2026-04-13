@@ -4,8 +4,8 @@
 set -euo pipefail
 
 MODEL_DIR="${MODEL_DIR:-/runpod-volume/models}"
-MODEL_FILE="${MODEL_FILE:-gemma-4-26B-A4B-it-Q4_K_M.gguf}"
-MODEL_REPO="${MODEL_REPO:-ggml-org/gemma-4-26B-A4B-it-GGUF}"
+MODEL_FILE="${MODEL_FILE:-gemma-4-31B-it-abliterated-Q4_K_M.gguf}"
+MODEL_REPO="${MODEL_REPO:-LiconStudio/Gemma-4-31B-it-abliterated-GGUF}"
 MODEL_PATH="${MODEL_DIR}/${MODEL_FILE}"
 
 echo "=========================================="
