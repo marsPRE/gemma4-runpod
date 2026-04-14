@@ -193,6 +193,15 @@ def handler(job: dict) -> dict | Generator:
         result = resp.json()
         # Strip non-standard llama.cpp fields that may confuse RunPod's proxy
         result.pop("timings", None)
+        result.pop("system_fingerprint", None)
+        # Gemma 4 thinking-mode outputs reasoning_content instead of content.
+        # Move reasoning_content into content so clients receive actual text,
+        # and strip the non-standard field to keep the response OpenAI-compatible.
+        for choice in result.get("choices", []):
+            msg = choice.get("message", {})
+            reasoning = msg.pop("reasoning_content", None)
+            if reasoning and not msg.get("content"):
+                msg["content"] = reasoning
         return result
 
     stream  = job_input.get("stream", False)
