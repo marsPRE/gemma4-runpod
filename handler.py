@@ -202,6 +202,9 @@ def handler(job: dict) -> dict | Generator:
             reasoning = msg.pop("reasoning_content", None)
             if reasoning and not msg.get("content"):
                 msg["content"] = reasoning
+        # Strip non-standard usage sub-fields
+        usage = result.get("usage", {})
+        usage.pop("prompt_tokens_details", None)
         return result
 
     stream  = job_input.get("stream", False)
