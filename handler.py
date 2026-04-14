@@ -184,6 +184,19 @@ def handler(job: dict) -> dict | Generator:
     if "openai_route" in job_input:
         route  = job_input["openai_route"].lstrip("/")   # e.g. "v1/chat/completions"
         body   = job_input.get("openai_input", {})
+
+        # llama-server does not expose /v1/models — synthesise a valid response
+        if route in ("v1/models", "models"):
+            return {
+                "object": "list",
+                "data": [{
+                    "id": MODEL_FILE,
+                    "object": "model",
+                    "created": 0,
+                    "owned_by": "local",
+                }],
+            }
+
         stream = body.get("stream", False)
         url    = f"{LLAMA_BASE_URL}/{route}"
         if stream:
