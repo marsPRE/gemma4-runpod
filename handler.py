@@ -296,4 +296,4 @@ if __name__ == "__main__":
     start_llama_server()
 
     log.info("Registering RunPod handler...")
-    runpod.serverless.start({"handler": handler})
+    runpod.serverless.start({"handler": handler, "return_aggregate_stream": True})
