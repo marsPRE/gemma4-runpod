@@ -39,9 +39,10 @@ log = logging.getLogger("gemma4-handler")
 # ---------------------------------------------------------------------------
 # Configuration (all overridable via environment variables)
 # ---------------------------------------------------------------------------
-MODEL_REPO     = os.environ.get("MODEL_REPO",    "ggml-org/gemma-4-26B-A4B-it-GGUF")
-MODEL_FILE     = os.environ.get("MODEL_FILE",    "gemma-4-26B-A4B-it-Q4_K_M.gguf")
+MODEL_REPO     = os.environ.get("MODEL_REPO",    "LiconStudio/Gemma-4-31B-it-abliterated-GGUF")
+MODEL_FILE     = os.environ.get("MODEL_FILE",    "gemma-4-31B-it-abliterated-Q4_K_M.gguf")
 MODEL_DIR      = os.environ.get("MODEL_DIR",     "/runpod-volume/models")
+MMPROJ_FILE    = os.environ.get("MMPROJ_FILE",   "mmproj-F16.gguf")
 N_GPU_LAYERS   = os.environ.get("N_GPU_LAYERS",  "-1")
 CTX_SIZE       = os.environ.get("CTX_SIZE",      "8192")
 PARALLEL       = os.environ.get("PARALLEL",      "1")
@@ -112,11 +113,13 @@ def start_llama_server() -> None:
         # (llama-server detects it automatically when placed next to the GGUF)
     ]
 
-    # If a multimodal projector file exists next to the GGUF, pass it explicitly.
-    mmproj_candidates = list(Path(MODEL_DIR).glob("*mmproj*"))
-    if mmproj_candidates:
-        cmd += ["--mmproj", str(mmproj_candidates[0])]
-        log.info("Multimodal projector found: %s", mmproj_candidates[0])
+    # Only use mmproj if explicitly configured — auto-discovery picks up stale
+    # files from previous models on the network volume and causes dim mismatches.
+    mmproj_file = os.environ.get("MMPROJ_FILE", "")
+    if mmproj_file:
+        mmproj_path = Path(MODEL_DIR) / mmproj_file
+        cmd += ["--mmproj", str(mmproj_path)]
+        log.info("Multimodal projector: %s", mmproj_path)
 
     log.info("Starting llama-server: %s", " ".join(cmd))
     _llama_proc = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr)

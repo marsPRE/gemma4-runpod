@@ -32,6 +32,7 @@ ENV HF_HUB_DISABLE_XET=1
 ENV MODEL_REPO=LiconStudio/Gemma-4-31B-it-abliterated-GGUF
 ENV MODEL_FILE=gemma-4-31B-it-abliterated-Q4_K_M.gguf
 ENV MODEL_DIR=/runpod-volume/models
+ENV MMPROJ_FILE=mmproj-F16.gguf
 ENV N_GPU_LAYERS=-1
 ENV CTX_SIZE=8192
 ENV PARALLEL=1
